@@ -20,11 +20,11 @@ const CSS_VARS = [
 ];
 
 const TEXT_STYLE = `
-  text { font-family: 'Pretendard','Noto Sans KR',-apple-system,sans-serif; }
-  .cloud-label { font-size: 12px; font-weight: 700; }
-  .cloud-text { font-size: 12.5px; font-weight: 500; }
-  .cloud-vs { font-size: 13px; font-weight: 700; }
-  .cloud-assumption-tag { font-size: 11px; font-weight: 700; }
+  text { font-family: 'NanumSquare','Noto Sans KR',-apple-system,sans-serif; }
+  .cloud-key { font-size: 18px; font-weight: 800; }
+  .cloud-text { font-size: 16.5px; font-weight: 800; }
+  .cloud-vs { font-size: 18px; font-weight: 700; }
+  .cloud-assumption-tag { font-size: 11px; font-weight: 800; }
 `;
 
 export async function svgToPngDataUrl(svg, scale = 2) {

@@ -23,7 +23,8 @@ html, body, #root {
   min-height: 100vh;
   background: var(--paper);
   color: var(--ink);
-  font-family: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+  font-family: 'NanumSquare', 'Noto Sans KR', -apple-system, sans-serif;
+  font-weight: 800; /* 나눔스퀘어 Extra Bold */
   display: flex;
   flex-direction: column;
 }
@@ -47,9 +48,9 @@ html, body, #root {
   font-weight: 600;
 }
 .topbar-title {
-  font-family: 'Noto Serif KR', Georgia, serif;
+  font-family: 'NanumSquare', 'Noto Sans KR', sans-serif;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--ink);
 }
 
@@ -73,18 +74,18 @@ html, body, #root {
   background: linear-gradient(180deg, var(--paper) 0%, var(--paper-dim) 100%);
   border-right: 1px solid var(--paper-dim);
 }
-.cloud-svg { width: 100%; max-width: 560px; height: auto; }
-.cloud-label {
-  font-size: 12px;
-  font-weight: 700;
+.cloud-svg { width: 100%; max-width: 640px; height: auto; }
+.cloud-key {
+  font-size: 18px;
+  font-weight: 800;
   letter-spacing: 0.02em;
 }
 .cloud-text {
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 16.5px;
+  font-weight: 800;
 }
 .cloud-vs {
-  font-size: 13px;
+  font-size: 18px;
   fill: var(--terracotta);
   font-weight: 700;
 }
@@ -114,15 +115,17 @@ html, body, #root {
 }
 
 h1 {
-  font-family: 'Noto Serif KR', Georgia, serif;
+  font-family: 'NanumSquare', 'Noto Sans KR', sans-serif;
   font-size: 28px;
+  font-weight: 800;
   line-height: 1.4;
   margin: 0 0 16px;
   color: var(--ink);
 }
 h2 {
-  font-family: 'Noto Serif KR', Georgia, serif;
+  font-family: 'NanumSquare', 'Noto Sans KR', sans-serif;
   font-size: 19px;
+  font-weight: 800;
   margin: 0 0 6px;
   color: var(--ink);
 }

@@ -10,9 +10,10 @@ import "./styles.css";
 
 const STAGE = {
   INTRO: "intro",
+  PARTIES: "parties", // Step 0 — 누구와 누구의 갈등인지 입력
   CONFLICT: "conflict", // D, D' 입력
   NEEDS: "needs", // AI가 욕구를 캐묻는 대화
-  GOAL: "goal", // 공동목표 제안
+  GOAL: "goal", // 공통목표 제안
   ASSUMPTIONS: "assumptions", // 구름 확인 + 화살표에 숨은 가정 도출
   SOLUTIONS: "solutions", // 가정을 깨는 윈윈 해결책(주입) 도출
 };
@@ -23,7 +24,7 @@ const SAMPLE = {
 };
 
 const SYSTEM_PROMPT = `당신은 TOCfE(Theory of Constraints for Education)의 '구름(Cloud)' 사고도구 작성을 돕는 다정하고 통찰력 있는 사고 파트너입니다.
-구름 구조: A(공동목표) - B(나의 욕구), C(상대의 욕구) - D(나의 주장), D'(상대의 주장).
+구름 구조: A(공통목표) - B(나의 욕구), C(상대의 욕구) - D(나의 주장), D'(상대의 주장).
 당신의 역할은 답을 대신 주는 것이 아니라, 소크라테스식 질문으로 학습자가 스스로 자신의 주장(D) 뒤에 숨은 진짜 욕구(B)를 발견하도록 돕는 것입니다.
 규칙:
 - 한 번에 하나의 질문만 하세요.
@@ -33,7 +34,7 @@ const SYSTEM_PROMPT = `당신은 TOCfE(Theory of Constraints for Education)의 '
 - 정답을 미리 말하지 마세요.`;
 
 const ASSUMPTION_SYSTEM_PROMPT = `당신은 TOCfE '구름(Cloud)' 작성을 마친 학습자가 화살표 뒤에 숨은 '가정(전제, assumption)'을 스스로 발견하도록 돕는 사고 파트너입니다.
-구름 구조: A(공동목표) - B(나의 욕구), C(상대의 욕구) - D(나의 주장), D'(상대의 주장).
+구름 구조: A(공통목표) - B(나의 욕구), C(상대의 욕구) - D(나의 주장), D'(상대의 주장).
 화살표는 이렇게 읽습니다: "B하기 위해서는 D해야만 한다", "C하기 위해서는 D'해야만 한다". 이 '~해야만 한다'가 성립하려면 우리가 당연하게 여기는 숨은 가정이 있습니다. 그 가정을 드러내는 것이 목표입니다.
 규칙:
 - 한 번에 하나의 질문만, 따뜻하고 짧게(2~3문장 이내) 말하세요.
@@ -43,7 +44,7 @@ const ASSUMPTION_SYSTEM_PROMPT = `당신은 TOCfE '구름(Cloud)' 작성을 마�
 - 정답을 미리 말하지 말고, 학습자가 스스로 가정을 말하게 하세요.`;
 
 const SOLUTION_SYSTEM_PROMPT = `당신은 TOCfE '구름(Cloud)'에서 드러난 '가정(전제)'에 도전하여 양쪽을 모두 만족시키는 윈윈 해결책(주입, injection)을 학습자가 스스로 찾도록 돕는 사고 파트너입니다.
-구름 구조: A(공동목표) - B(나의 욕구), C(상대의 욕구) - D(나의 주장), D'(상대의 주장).
+구름 구조: A(공통목표) - B(나의 욕구), C(상대의 욕구) - D(나의 주장), D'(상대의 주장).
 핵심 원리: 화살표 뒤의 가정이 '항상 참'은 아닙니다. 그 가정을 깨면, 한쪽을 포기하지 않고도 양쪽 욕구를 모두 채우는 길이 열립니다.
 - B–D 가정을 깨면: D'(상대의 주장)를 하면서도 B(나의 욕구)를 충족하는 해결책을 찾을 수 있습니다.
 - C–D' 가정을 깨면: D(나의 주장)를 하면서도 C(상대의 욕구)를 충족하는 해결책을 찾을 수 있습니다.
@@ -55,6 +56,8 @@ const SOLUTION_SYSTEM_PROMPT = `당신은 TOCfE '구름(Cloud)'에서 드러난 
 
 export default function App() {
   const [stage, setStage] = useState(STAGE.INTRO);
+  const [me, setMe] = useState(""); // 갈등 당사자 — 나(한쪽)
+  const [other, setOther] = useState(""); // 갈등 당사자 — 상대(다른 쪽)
   const [d, setD] = useState("");
   const [dPrime, setDPrime] = useState("");
   const [b, setB] = useState("");
@@ -89,8 +92,18 @@ export default function App() {
     }
   }, [chat, aChat, sChat, loading]);
 
-  function startConflict() {
+  function startFlow() {
+    setStage(STAGE.PARTIES);
+  }
+
+  function goToConflict() {
+    if (!me.trim() || !other.trim()) return;
     setStage(STAGE.CONFLICT);
+  }
+
+  function usePartySample() {
+    setMe("엄마");
+    setOther("아이");
   }
 
   function useSample() {
@@ -104,7 +117,8 @@ export default function App() {
     setHighlight("D");
     setLoading(true);
     setError("");
-    const firstMsg = `나의 주장(D): "${d}"\n상대의 주장(D'): "${dPrime}"\n\n이 두 주장을 보고, 먼저 "나의 주장(D)" 뒤에 숨은 진짜 욕구가 무엇인지 질문해주세요.`;
+    const partyLine = me && other ? `갈등 당사자: 나=${me}, 상대=${other}.\n` : "";
+    const firstMsg = `${partyLine}나(${me || "나"})의 주장(D): "${d}"\n상대(${other || "상대"})의 주장(D'): "${dPrime}"\n\n이 두 주장을 보고, 먼저 "${me || "나"}의 주장(D)" 뒤에 숨은 진짜 욕구가 무엇인지 질문해주세요.`;
     setChat([{ role: "user", text: firstMsg, hidden: true }]);
     try {
       const res = await callClaude([{ role: "user", content: firstMsg }], SYSTEM_PROMPT);
@@ -146,7 +160,7 @@ export default function App() {
           "\n\n[지시: 학습자의 답변을 바탕으로 상대의 욕구(C)를 한 문장으로 요약 제안하세요. 형식: 공감 한마디 후 줄바꿈, '👉 욕구(C): ...' 형태.]";
       } else if (turnCount >= 5) {
         guidance =
-          "\n\n[지시: 이제 두 욕구(B, C)를 모두 충족시킬 수 있는 더 상위의 공동목표(A)를 학습자와 함께 제안하세요. 형식: 짧은 통찰 한마디 후 줄바꿈, '🎯 공동목표(A): ...' 형태로 제시하고, 이것이 갈등을 어떻게 해소하는지 한 문장으로 설명하세요.]";
+          "\n\n[지시: 이제 두 욕구(B, C)를 모두 충족시킬 수 있는 더 상위의 공통목표(A)를 학습자와 함께 제안하세요. 형식: 짧은 통찰 한마디 후 줄바꿈, '🎯 공통목표(A): ...' 형태로 제시하고, 이것이 갈등을 어떻게 해소하는지 한 문장으로 설명하세요.]";
       }
 
       const lastIdx = apiMessages.length - 1;
@@ -161,7 +175,7 @@ export default function App() {
 
       const bMatch = text.match(/👉\s*욕구\(B\)\s*[:：]\s*(.+)/);
       const cMatch = text.match(/👉\s*욕구\(C\)\s*[:：]\s*(.+)/);
-      const aMatch = text.match(/🎯\s*공동목표\(A\)\s*[:：]\s*(.+)/);
+      const aMatch = text.match(/🎯\s*공통목표\(A\)\s*[:：]\s*(.+)/);
 
       if (bMatch) {
         setB(bMatch[1].trim());
@@ -207,7 +221,7 @@ export default function App() {
     setLoading(true);
     setError("");
     const firstMsg =
-      `완성된 구름입니다.\n공동목표(A): "${a}"\n나의 욕구(B): "${b}"\n상대의 욕구(C): "${c}"\n나의 주장(D): "${d}"\n상대의 주장(D'): "${dPrime}"\n\n` +
+      `완성된 구름입니다.\n공통목표(A): "${a}"\n나의 욕구(B): "${b}"\n상대의 욕구(C): "${c}"\n나의 주장(D): "${d}"\n상대의 주장(D'): "${dPrime}"\n\n` +
       "먼저 이 구름이 올바르게 작성됐는지, 네 화살표(A→B, A→C, B→D, C→D')를 각각 '~하기 위해서는 ~해야만 한다' 문장으로 읽어 확인해주세요. 그런 다음 B–D 화살표부터, 'B하기 위해서는 왜 꼭 D를 해야만 할까?'라는 가정을 학습자가 '왜냐하면…'으로 채우도록 첫 질문을 던지세요." +
       assumptionGuidance("bd");
     setAChat([{ role: "user", text: firstMsg, hidden: true }]);
@@ -287,7 +301,7 @@ export default function App() {
     setLoading(true);
     setError("");
     const firstMsg =
-      `완성된 구름과 도출한 가정입니다.\n공동목표(A): "${a}"\n나의 욕구(B): "${b}"\n상대의 욕구(C): "${c}"\n나의 주장(D): "${d}"\n상대의 주장(D'): "${dPrime}"\n` +
+      `완성된 구름과 도출한 가정입니다.\n공통목표(A): "${a}"\n나의 욕구(B): "${b}"\n상대의 욕구(C): "${c}"\n나의 주장(D): "${d}"\n상대의 주장(D'): "${dPrime}"\n` +
       `B–D 가정: "${bdAssumption}"\nC–D' 가정: "${cdAssumption}"\n\n` +
       "이제 가정에 도전해 윈윈 해결책을 찾습니다. 먼저 B–D 가정부터, 이 가정이 정말 항상 참인지 물은 뒤, D'를 하면서도 B를 충족할 방법이 있을지 학습자가 떠올리도록 첫 질문을 던지세요." +
       solutionGuidance("bd");
@@ -367,6 +381,8 @@ export default function App() {
 
   function reset() {
     setStage(STAGE.INTRO);
+    setMe("");
+    setOther("");
     setD("");
     setDPrime("");
     setB("");
@@ -414,15 +430,15 @@ export default function App() {
           <div className="legend">
             <span>
               <i style={{ background: "var(--navy)" }} />
-              공동목표
+              공통목표
             </span>
             <span>
               <i style={{ background: "var(--sage)" }} />
-              욕구
+              필요(Need)
             </span>
             <span>
               <i style={{ background: "var(--terracotta)" }} />
-              주장
+              주장(Want)
             </span>
           </div>
 
@@ -443,37 +459,78 @@ export default function App() {
             <div className="panel fade-in">
               <h1>갈등 속에는 늘, 숨은 목표가 있다</h1>
               <p className="lede">
-                구름(Cloud)은 두 사람의 상충하는 주장(D, D') 뒤에 숨은 진짜 욕구(B, C)를 찾아내고, 그
-                욕구를 모두 만족시킬 공동목표(A)를 발견하는 사고도구입니다.
+                구름(Cloud)은 갈등하는 양쪽의 주장(D, D') 뒤에 숨은 진짜 욕구(B, C)를 찾아내고,
+                공통목표를 발견하여 양쪽의 필요(Need)를 만족시킬 수 있는 윈윈해결책을 찾아 갈등을
+                해소하기 위한 사고도구입니다.
               </p>
               <p className="lede small">
                 여기서는 AI가 정답을 대신 채워주지 않습니다. 대신 계속 되물으며, 당신이 스스로 자신의
                 욕구를 발견하도록 돕습니다.
               </p>
-              <button className="btn primary" onClick={startConflict}>
+              <button className="btn primary" onClick={startFlow}>
                 시작하기
               </button>
+            </div>
+          )}
+
+          {stage === STAGE.PARTIES && (
+            <div className="panel fade-in">
+              <h2>0. 누구와 누구의 갈등인가요?</h2>
+              <p className="hint">갈등의 두 당사자를 적어주세요. 예: 엄마 ↔ 아이</p>
+
+              <label className="field-label terracotta">나 — 한쪽 당사자</label>
+              <input
+                className="field"
+                placeholder="예: 엄마"
+                value={me}
+                onChange={(e) => setMe(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && goToConflict()}
+              />
+
+              <label className="field-label terracotta">상대 — 다른 쪽 당사자</label>
+              <input
+                className="field"
+                placeholder="예: 아이"
+                value={other}
+                onChange={(e) => setOther(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && goToConflict()}
+              />
+
+              <div className="row">
+                <button className="btn ghost" onClick={usePartySample}>
+                  예시로 채우기
+                </button>
+                <button
+                  className="btn primary"
+                  disabled={!me.trim() || !other.trim()}
+                  onClick={goToConflict}
+                >
+                  다음 →
+                </button>
+              </div>
             </div>
           )}
 
           {stage === STAGE.CONFLICT && (
             <div className="panel fade-in">
               <h2>1. 갈등이 되는 두 주장을 적어보세요</h2>
-              <p className="hint">예: "게임을 더 하고 싶다" vs "지금 자야 한다"</p>
+              <p className="hint">
+                {me || "나"} ↔ {other || "상대"} — 예: "게임을 더 하고 싶다" vs "지금 자야 한다"
+              </p>
 
-              <label className="field-label terracotta">D — 나의 주장</label>
+              <label className="field-label terracotta">D — {me || "나"}의 주장</label>
               <textarea
                 className="field"
-                placeholder="나는 무엇을 원하나요?"
+                placeholder={`${me || "나"}는 무엇을 원하나요?`}
                 value={d}
                 onChange={(e) => setD(e.target.value)}
                 rows={2}
               />
 
-              <label className="field-label terracotta">D′ — 상대의 주장</label>
+              <label className="field-label terracotta">D′ — {other || "상대"}의 주장</label>
               <textarea
                 className="field"
-                placeholder="상대는 무엇을 원하나요?"
+                placeholder={`${other || "상대"}는 무엇을 원하나요?`}
                 value={dPrime}
                 onChange={(e) => setDPrime(e.target.value)}
                 rows={2}
@@ -496,7 +553,7 @@ export default function App() {
 
           {(stage === STAGE.NEEDS || stage === STAGE.GOAL) && (
             <div className="panel chat-panel fade-in">
-              <h2>{stage === STAGE.GOAL ? "공동목표를 찾았어요" : "2. AI가 묻습니다"}</h2>
+              <h2>{stage === STAGE.GOAL ? "공통목표를 찾았어요" : "2. AI가 묻습니다"}</h2>
               {error && <p className="error-text">{error}</p>}
               <div className="chat-scroll" ref={scrollRef}>
                 {chat
@@ -727,7 +784,7 @@ export default function App() {
             <b>상대의 욕구 (C):</b> {c}
           </p>
           <p>
-            <b>공동목표 (A):</b> {a}
+            <b>공통목표 (A):</b> {a}
           </p>
           {bdAssumption && (
             <p>
